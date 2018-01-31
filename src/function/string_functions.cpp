@@ -31,13 +31,16 @@ bool StringFunctions::Like(UNUSED_ATTRIBUTE executor::ExecutorContext &ctx,
                            uint32_t plen) {
   PL_ASSERT(t != nullptr);
   PL_ASSERT(p != nullptr);
-  if (plen == 1 && *p == '%') return true;
+  if (plen == 1 && *p == '%')
+    return true;
 
   while (tlen > 0 && plen > 0) {
     if (*p == '\\') {
       NextByte(p, plen);
-      if (plen <= 0) return false;
-      if (tolower(*p) != tolower(*t)) return false;
+      if (plen <= 0)
+        return false;
+      if (tolower(*p) != tolower(*t))
+        return false;
     } else if (*p == '%') {
       char firstpat;
       NextByte(p, plen);
@@ -46,17 +49,20 @@ bool StringFunctions::Like(UNUSED_ATTRIBUTE executor::ExecutorContext &ctx,
         if (*p == '%')
           NextByte(p, plen);
         else if (*p == '_') {
-          if (tlen <= 0) return false;
+          if (tlen <= 0)
+            return false;
           NextByte(t, tlen);
           NextByte(p, plen);
         } else
           break;
       }
 
-      if (plen <= 0) return true;
+      if (plen <= 0)
+        return true;
 
       if (*p == '\\') {
-        if (plen < 2) return false;
+        if (plen < 2)
+          return false;
         firstpat = tolower(p[1]);
       } else
         firstpat = tolower(*p);
@@ -65,7 +71,8 @@ bool StringFunctions::Like(UNUSED_ATTRIBUTE executor::ExecutorContext &ctx,
         if (tolower(*t) == firstpat) {
           int matched = Like(ctx, t, tlen, p, plen);
 
-          if (matched != false) return matched;
+          if (matched != false)
+            return matched;
         }
 
         NextByte(t, tlen);
@@ -82,10 +89,13 @@ bool StringFunctions::Like(UNUSED_ATTRIBUTE executor::ExecutorContext &ctx,
     NextByte(p, plen);
   }
 
-  if (tlen > 0) return false;
+  if (tlen > 0)
+    return false;
 
-  while (plen > 0 && *p == '%') NextByte(p, plen);
-  if (plen <= 0) return true;
+  while (plen > 0 && *p == '%')
+    NextByte(p, plen);
+  if (plen <= 0)
+    return true;
 
   return false;
 }
@@ -256,10 +266,13 @@ StringFunctions::StrWithLen StringFunctions::Concat(executor::ExecutorContext &c
   uint32_t total_length = 0;
   for (uint32_t i = 0; i < size; i++) {
     const char *cur = concat_strs[i];
-    uint32_t curLen = strs_length[i] - 1;
-    if (curLen == 4 && strcmp(cur, "NULL") == 0) {
+    if (cur == nullptr || *cur == '\0') {
       continue;
     }
+    if (strcmp(cur, "NULL") == 0) {
+      continue;
+    }
+    uint32_t curLen = strs_length[i] - 1;
     total_length += curLen;
   }
 
@@ -270,10 +283,13 @@ StringFunctions::StrWithLen StringFunctions::Concat(executor::ExecutorContext &c
   auto ptr = new_str;
   for (uint32_t i = 0; i < size; i++) {
     const char *cur = concat_strs[i];
-    uint32_t curLen = strs_length[i] - 1;
-    if (curLen == 4 && strcmp(cur, "NULL") == 0) {
+    if (cur == nullptr || *cur == '\0') {
       continue;
     }
+    if (strcmp(cur, "NULL") == 0) {
+      continue;
+    }
+    uint32_t curLen = strs_length[i] - 1;
     PL_MEMCPY(ptr, concat_strs[i], curLen);
     ptr += curLen;
   }

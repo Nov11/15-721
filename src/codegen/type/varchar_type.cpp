@@ -202,7 +202,7 @@ struct Upper : public TypeSystem::UnaryOperatorHandleNull {
     llvm::Value *raw_ret =
         codegen.Call(StringFunctionsProxy::Upper,
                      {executor_ctx, val.GetValue(), val.GetLength()});
-    return Value{Varchar::Instance(), raw_ret};
+    return Value{Varchar::Instance(), raw_ret, val.GetLength()};
   }
 };
 
@@ -222,7 +222,7 @@ struct Lower : public TypeSystem::UnaryOperatorHandleNull {
     llvm::Value *raw_ret =
         codegen.Call(StringFunctionsProxy::Lower,
                      {executor_ctx, val.GetValue(), val.GetLength()});
-    return Value{Varchar::Instance(), raw_ret};
+    return Value{Varchar::Instance(), raw_ret,val.GetLength()};
   }
 };
 ////////////////////////////////////////////////////////////////////////////////
