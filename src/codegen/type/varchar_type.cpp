@@ -449,11 +449,6 @@ struct Concat : public TypeSystem::NaryOperator,
   Value Eval(CodeGen &codegen, const std::vector<Value> &input_args,
              const TypeSystem::InvocationContext &ctx) const override {
     // Make room on stack to store each of the input strings and their lengths
-    std::cout << input_args.size() << std::endl;
-    std::cout << static_cast<int>(input_args[0].GetType().GetSqlType().TypeId()) << "|" << input_args[0].GetValue()
-              << "|" << input_args[0].GetLength() << std::endl;
-    std::cout << static_cast<int>(input_args[1].GetType().GetSqlType().TypeId()) << "|" << input_args[1].GetValue()
-              << "|" << input_args[1].GetLength() << std::endl;
 
     auto num_inputs = static_cast<uint32_t>(input_args.size());
     auto *concat_str_buffer =

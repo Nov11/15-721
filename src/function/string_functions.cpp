@@ -311,7 +311,6 @@ type::Value StringFunctions::LowerAdaptor(const std::vector<type::Value> &args) 
 }
 type::Value StringFunctions::ConcatAdaptor(const std::vector<type::Value> &args) {
   PL_ASSERT(args.size() == 2);
-  std::cout << "in concatadaptor" << std::endl;
   if (args[0].IsNull() || args[1].IsNull()) {
     return type::ValueFactory::GetNullValueByType(type::TypeId::VARCHAR);
   }
