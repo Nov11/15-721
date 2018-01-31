@@ -226,7 +226,7 @@ char *StringFunctions::Upper(UNUSED_ATTRIBUTE executor::ExecutorContext &ctx,
 
   auto *pool = ctx.GetPool();
   auto *new_str = reinterpret_cast<char *>(pool->Allocate(length));
-  assert(new_str);
+
   for (uint32_t i = 0; i < length; i++) {
     new_str[i] = static_cast<char>(std::toupper(str[i]));
   }
@@ -256,13 +256,10 @@ StringFunctions::StrWithLen StringFunctions::Concat(executor::ExecutorContext &c
   uint32_t total_length = 0;
   for (uint32_t i = 0; i < size; i++) {
     const char *cur = concat_strs[i];
-    if(cur == nullptr || *cur == '\0'){
-      continue;
-    }
-    if (strcmp(cur, "NULL") == 0) {
-      continue;
-    }
     uint32_t curLen = strs_length[i] - 1;
+    if (curLen == 4 && strcmp(cur, "NULL") == 0) {
+      continue;
+    }
     total_length += curLen;
   }
 
@@ -273,13 +270,10 @@ StringFunctions::StrWithLen StringFunctions::Concat(executor::ExecutorContext &c
   auto ptr = new_str;
   for (uint32_t i = 0; i < size; i++) {
     const char *cur = concat_strs[i];
-    if(cur == nullptr || *cur == '\0'){
-      continue;
-    }
-    if (strcmp(cur, "NULL") == 0) {
-      continue;
-    }
     uint32_t curLen = strs_length[i] - 1;
+    if (curLen == 4 && strcmp(cur, "NULL") == 0) {
+      continue;
+    }
     PL_MEMCPY(ptr, concat_strs[i], curLen);
     ptr += curLen;
   }
