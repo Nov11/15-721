@@ -13,7 +13,7 @@
 #pragma once
 
 #include <cstdint>
-
+#include "type/value.h"
 namespace peloton {
 
 namespace executor {
@@ -74,6 +74,20 @@ class StringFunctions {
   // Length will return the number of characters in the given string
   static uint32_t Length(executor::ExecutorContext &ctx, const char *str,
                          uint32_t length);
+
+  // inputs are c style strings. need to deal with ending NULL for both input and output.
+  // UPPER
+  static char*  Upper(executor::ExecutorContext& ctx, const char* str, const uint32_t length);
+  // LOWER
+  static char*  Lower(executor::ExecutorContext& ctx, const char* str, const uint32_t length);
+  // CONCAT concat('abc', 2, NULL, 33) -> 'abc233' size == 4, strs_length = '3, 1, 0, 2' not sure on length of numbers
+  static StringFunctions::StrWithLen  Concat(executor::ExecutorContext& ctx, const char **concat_strs, const uint32_t* strs_length, const uint32_t size);
+
+  // adaptors
+  static type::Value UpperAdaptor(const std::vector<type::Value> &args);
+  static type::Value LowerAdaptor(const std::vector<type::Value> &args);
+  static type::Value ConcatAdaptor(const std::vector<type::Value> &args);
+
 };
 
 }  // namespace function

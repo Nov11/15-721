@@ -148,7 +148,7 @@ StringFunctions::StrWithLen StringFunctions::LTrim(
   str_len -= 1;
   int tail = str_len - 1, head = 0;
 
-  while (head < (int)str_len && strchr(from, str[head]) != nullptr) {
+  while (head < (int) str_len && strchr(from, str[head]) != nullptr) {
     head++;
   }
 
@@ -204,7 +204,7 @@ StringFunctions::StrWithLen StringFunctions::BTrim(
   }
 
   // Trim head
-  while (head < (int)str_len && strchr(from, str[head]) != nullptr) {
+  while (head < (int) str_len && strchr(from, str[head]) != nullptr) {
     head++;
   }
 
@@ -219,6 +219,104 @@ uint32_t StringFunctions::Length(
   PL_ASSERT(str != nullptr);
   return length;
 }
+char *StringFunctions::Upper(UNUSED_ATTRIBUTE executor::ExecutorContext &ctx,
+                             const char *str,
+                             const uint32_t length) {
+  PL_ASSERT(str != nullptr);
 
+  auto *pool = ctx.GetPool();
+  auto *new_str = reinterpret_cast<char *>(pool->Allocate(length));
+
+  for (uint32_t i = 0; i < length; i++) {
+    new_str[i] = static_cast<char>(std::toupper(str[i]));
+  }
+
+  return new_str;
+}
+
+char *StringFunctions::Lower(UNUSED_ATTRIBUTE executor::ExecutorContext &ctx,
+                             const char *str,
+                             const uint32_t length) {
+  PL_ASSERT(str != nullptr);
+
+  auto *pool = ctx.GetPool();
+  auto *new_str = reinterpret_cast<char *>(pool->Allocate(length));
+
+  for (uint32_t i = 0; i < length; i++) {
+    new_str[i] = static_cast<char>(std::tolower(str[i]));
+  }
+
+  return new_str;
+}
+StringFunctions::StrWithLen StringFunctions::Concat(executor::ExecutorContext &ctx,
+                                                    const char **concat_strs,
+                                                    const uint32_t *strs_length,
+                                                    const uint32_t size) {
+  PL_ASSERT(concat_strs != nullptr && strs_length != nullptr);
+  uint32_t total_length = 0;
+  for (uint32_t i = 0; i < size; i++) {
+    const char *cur = concat_strs[i];
+    uint32_t curLen = strs_length[i] - 1;
+    if (curLen == 4 && strcmp(cur, "NULL") == 0) {
+      continue;
+    }
+    total_length += curLen;
+  }
+
+  total_length = total_length + 1;
+
+  auto *pool = ctx.GetPool();
+  auto *new_str = reinterpret_cast<char *>(pool->Allocate(total_length));
+  auto ptr = new_str;
+  for (uint32_t i = 0; i < size; i++) {
+    const char *cur = concat_strs[i];
+    uint32_t curLen = strs_length[i] - 1;
+    if (curLen == 4 && strcmp(cur, "NULL") == 0) {
+      continue;
+    }
+    PL_MEMCPY(ptr, concat_strs[i], curLen);
+    ptr += curLen;
+  }
+  new_str[total_length] = '\0';
+  return StringFunctions::StrWithLen{new_str, total_length};
+}
+
+type::Value StringFunctions::UpperAdaptor(const std::vector<type::Value> &args) {
+  PL_ASSERT(args.size() == 1);
+  if (args[0].IsNull()) {
+    return type::ValueFactory::GetNullValueByType(type::TypeId::VARCHAR);
+  }
+
+  executor::ExecutorContext ctx{nullptr};
+  auto ret = StringFunctions::Upper(ctx, args[0].GetAs<const char *>(),
+                                    args[0].GetLength());
+  return type::ValueFactory::GetVarcharValue(ret);
+}
+type::Value StringFunctions::LowerAdaptor(const std::vector<type::Value> &args) {
+  PL_ASSERT(args.size() == 1);
+  if (args[0].IsNull()) {
+    return type::ValueFactory::GetNullValueByType(type::TypeId::VARCHAR);
+  }
+
+  executor::ExecutorContext ctx{nullptr};
+  auto ret = StringFunctions::Lower(ctx, args[0].GetAs<const char *>(),
+                                    args[0].GetLength());
+  return type::ValueFactory::GetVarcharValue(ret);
+}
+type::Value StringFunctions::ConcatAdaptor(const std::vector<type::Value> &args) {
+  PL_ASSERT(args.size() == 2);
+  if (args[0].IsNull() || args[1].IsNull()) {
+    return type::ValueFactory::GetNullValueByType(type::TypeId::VARCHAR);
+  }
+  executor::ExecutorContext ctx{nullptr};
+  const char *v[2] = {args.at(0).GetData(), args.at(1).GetData()};
+  uint32_t s[2] = {
+      static_cast<uint32_t>(strlen(args.at(0).GetData()) + 1),
+      static_cast<uint32_t>(strlen(args.at(1).GetData()) + 1)};
+  auto ret = StringFunctions::Concat(ctx, v, s, 2);
+
+  std::string str(ret.str, ret.length - 1);
+  return type::ValueFactory::GetVarcharValue(str);
+}
 }  // namespace function
 }  // namespace peloton

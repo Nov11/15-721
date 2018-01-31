@@ -64,11 +64,11 @@ if [ "$DISTRO" = "UBUNTU" ]; then
        fi
     done
 
-    sudo apt-get -qq $FORCE_Y --ignore-missing -y install \
+    sudo apt-get  install \
         git \
         g++ \
-        clang-3.7 \
-        $CMAKE_NAME \
+        clang \
+        cmake \
         libgflags-dev \
         libprotobuf-dev \
         protobuf-compiler \
@@ -82,7 +82,7 @@ if [ "$DISTRO" = "UBUNTU" ]; then
         valgrind \
         lcov \
         libpqxx-dev \
-        llvm-3.7 \
+        llvm \
         libedit-dev \
         postgresql-client
 

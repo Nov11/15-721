@@ -10,6 +10,7 @@
 //
 //===---------------------------------------------------------------------===//
 
+#include <include/function/string_functions.h>
 #include "catalog/catalog.h"
 
 #include "catalog/column_catalog.h"
@@ -967,7 +968,7 @@ void Catalog::InitializeFunctions() {
           "concat", {type::TypeId::VARCHAR, type::TypeId::VARCHAR},
           type::TypeId::VARCHAR, internal_lang, "Concat",
           function::BuiltInFuncType{OperatorId::Concat,
-                                    function::OldEngineStringFunctions::Concat},
+                                    function::StringFunctions::ConcatAdaptor},
           txn);
       AddBuiltinFunction(
           "substr",
@@ -1199,7 +1200,18 @@ void Catalog::InitializeFunctions() {
                          function::BuiltInFuncType{
                              OperatorId::Now, function::DateFunctions::_Now},
                          txn);
-
+      AddBuiltinFunction(
+          "upper", {type::TypeId::VARCHAR}, type::TypeId::VARCHAR,
+          internal_lang, "Upper",
+          function::BuiltInFuncType{OperatorId::Upper,
+                                    function::StringFunctions::UpperAdaptor},
+          txn);
+      AddBuiltinFunction(
+          "lower", {type::TypeId::VARCHAR}, type::TypeId::VARCHAR,
+          internal_lang, "Lower",
+          function::BuiltInFuncType{OperatorId::Lower,
+                                    function::StringFunctions::LowerAdaptor},
+          txn);
     } catch (CatalogException &e) {
       txn_manager.AbortTransaction(txn);
       throw e;
