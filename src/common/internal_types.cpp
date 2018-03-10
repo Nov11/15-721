@@ -6,7 +6,7 @@
 //
 // Identification: src/common/internal_types.cpp
 //
-// Copyright (c) 2015-2017, Carnegie Mellon University Database Group
+// Copyright (c) 2015-2018, Carnegie Mellon University Database Group
 //
 //===----------------------------------------------------------------------===//
 
@@ -18,7 +18,6 @@
 #include "common/internal_types.h"
 #include "common/logger.h"
 #include "common/macros.h"
-#include "type/value_factory.h"
 #include "parser/sql_statement.h"
 #include "parser/statements.h"
 #include "util/string_util.h"
@@ -38,7 +37,6 @@ size_t CONNECTION_THREAD_COUNT = 1;
 size_t LOGGING_THREAD_COUNT = 1;
 size_t GC_THREAD_COUNT = 1;
 size_t EPOCH_THREAD_COUNT = 1;
-size_t MAX_CONCURRENCY = 10;
 
 //===--------------------------------------------------------------------===//
 // DatePart <--> String Utilities
@@ -529,101 +527,152 @@ std::ostream &operator<<(std::ostream &os, const StatementType &type) {
 // QueryType - String Utilities
 //===--------------------------------------------------------------------===//
 std::string QueryTypeToString(QueryType query_type) {
-  switch(query_type) {
-    case QueryType::QUERY_BEGIN:return "BEGIN";
-    case QueryType::QUERY_COMMIT:return "COMMIT";
-    case QueryType::QUERY_ROLLBACK:return "ROLLBACK";
-    case QueryType::QUERY_CREATE_DB:return "CREATE DATABASE";
-    case QueryType::QUERY_CREATE_INDEX: return "CREATE INDEX";
-    case QueryType::QUERY_CREATE_TABLE: return "CREATE TABLE";
-    case QueryType::QUERY_CREATE_TRIGGER: return "CREATE TRIGGER";
-    case QueryType::QUERY_CREATE_SCHEMA: return "CREATE SCHEMA";
-    case QueryType::QUERY_CREATE_VIEW: return "CREATE VIEW";
-    case QueryType::QUERY_DROP:return "DROP";
-    case QueryType::QUERY_INSERT:return "INSERT";
-    case QueryType::QUERY_SET: return "SET";
-    case QueryType::QUERY_SHOW: return "SHOW";
-    case QueryType::QUERY_UPDATE: return "UPDATE";
-    case QueryType::QUERY_ALTER: return "ALTER";
-    case QueryType::QUERY_DELETE: return "DELETE";
-    case QueryType::QUERY_COPY: return "COPY";
-    case QueryType::QUERY_ANALYZE: return "ANALYZE";
-    case QueryType::QUERY_RENAME: return "RENAME";
-    case QueryType::QUERY_PREPARE: return "PREPARE";
-    case QueryType::QUERY_EXECUTE: return "EXECUTE";
-    case QueryType::QUERY_SELECT: return "SELECT";
-    case QueryType::QUERY_OTHER: default: return "OTHER";
+  switch (query_type) {
+    case QueryType::QUERY_BEGIN:
+      return "BEGIN";
+    case QueryType::QUERY_COMMIT:
+      return "COMMIT";
+    case QueryType::QUERY_ROLLBACK:
+      return "ROLLBACK";
+    case QueryType::QUERY_CREATE_DB:
+      return "CREATE DATABASE";
+    case QueryType::QUERY_CREATE_INDEX:
+      return "CREATE INDEX";
+    case QueryType::QUERY_CREATE_TABLE:
+      return "CREATE TABLE";
+    case QueryType::QUERY_CREATE_TRIGGER:
+      return "CREATE TRIGGER";
+    case QueryType::QUERY_CREATE_SCHEMA:
+      return "CREATE SCHEMA";
+    case QueryType::QUERY_CREATE_VIEW:
+      return "CREATE VIEW";
+    case QueryType::QUERY_DROP:
+      return "DROP";
+    case QueryType::QUERY_INSERT:
+      return "INSERT";
+    case QueryType::QUERY_SET:
+      return "SET";
+    case QueryType::QUERY_SHOW:
+      return "SHOW";
+    case QueryType::QUERY_UPDATE:
+      return "UPDATE";
+    case QueryType::QUERY_ALTER:
+      return "ALTER";
+    case QueryType::QUERY_DELETE:
+      return "DELETE";
+    case QueryType::QUERY_COPY:
+      return "COPY";
+    case QueryType::QUERY_ANALYZE:
+      return "ANALYZE";
+    case QueryType::QUERY_RENAME:
+      return "RENAME";
+    case QueryType::QUERY_PREPARE:
+      return "PREPARE";
+    case QueryType::QUERY_EXECUTE:
+      return "EXECUTE";
+    case QueryType::QUERY_SELECT:
+      return "SELECT";
+    case QueryType::QUERY_OTHER:
+    default:
+      return "OTHER";
   }
 }
 
 QueryType StringToQueryType(const std::string &str) {
-  static std::unordered_map<std::string, QueryType> querytype_string_map {
-      {"BEGIN", QueryType::QUERY_BEGIN}, {"COMMIT", QueryType::QUERY_COMMIT},
-      {"ROLLBACK", QueryType::QUERY_ROLLBACK}, {"CREATE DATABASE", QueryType::QUERY_CREATE_DB},
-      {"CREATE INDEX", QueryType::QUERY_CREATE_INDEX}, {"CREATE TABLE", QueryType::QUERY_CREATE_TABLE},
-      {"DROP", QueryType::QUERY_DROP}, {"INSERT", QueryType::QUERY_INSERT},
-      {"SET", QueryType::QUERY_SET}, {"SHOW", QueryType::QUERY_SHOW},
-      {"SHOW", QueryType::QUERY_SHOW}, {"UPDATE", QueryType::QUERY_UPDATE},
-      {"ALTER", QueryType::QUERY_ALTER}, {"DELETE", QueryType::QUERY_DELETE},
-      {"COPY", QueryType::QUERY_COPY}, {"ANALYZE", QueryType::QUERY_ANALYZE},
-      {"RENAME", QueryType::QUERY_RENAME}, {"PREPARE", QueryType::QUERY_PREPARE},
-      {"EXECUTE", QueryType::QUERY_EXECUTE}, {"SELECT", QueryType::QUERY_SELECT},
-      {"CREATE TRIGGER", QueryType::QUERY_CREATE_TRIGGER}, {"CREATE SCHEMA", QueryType::QUERY_CREATE_SCHEMA},
-      {"CREATE VIEW", QueryType::QUERY_CREATE_VIEW}, {"OTHER", QueryType::QUERY_OTHER},
+  static std::unordered_map<std::string, QueryType> querytype_string_map{
+      {"BEGIN", QueryType::QUERY_BEGIN},
+      {"COMMIT", QueryType::QUERY_COMMIT},
+      {"ROLLBACK", QueryType::QUERY_ROLLBACK},
+      {"CREATE DATABASE", QueryType::QUERY_CREATE_DB},
+      {"CREATE INDEX", QueryType::QUERY_CREATE_INDEX},
+      {"CREATE TABLE", QueryType::QUERY_CREATE_TABLE},
+      {"DROP", QueryType::QUERY_DROP},
+      {"INSERT", QueryType::QUERY_INSERT},
+      {"SET", QueryType::QUERY_SET},
+      {"SHOW", QueryType::QUERY_SHOW},
+      {"SHOW", QueryType::QUERY_SHOW},
+      {"UPDATE", QueryType::QUERY_UPDATE},
+      {"ALTER", QueryType::QUERY_ALTER},
+      {"DELETE", QueryType::QUERY_DELETE},
+      {"COPY", QueryType::QUERY_COPY},
+      {"ANALYZE", QueryType::QUERY_ANALYZE},
+      {"RENAME", QueryType::QUERY_RENAME},
+      {"PREPARE", QueryType::QUERY_PREPARE},
+      {"EXECUTE", QueryType::QUERY_EXECUTE},
+      {"SELECT", QueryType::QUERY_SELECT},
+      {"CREATE TRIGGER", QueryType::QUERY_CREATE_TRIGGER},
+      {"CREATE SCHEMA", QueryType::QUERY_CREATE_SCHEMA},
+      {"CREATE VIEW", QueryType::QUERY_CREATE_VIEW},
+      {"OTHER", QueryType::QUERY_OTHER},
   };
-  std::unordered_map<std::string, QueryType>::iterator it  = querytype_string_map.find(str);
+  std::unordered_map<std::string, QueryType>::iterator it =
+      querytype_string_map.find(str);
   if (it != querytype_string_map.end()) {
-    return it -> second;
+    return it->second;
   } else {
     return QueryType::QUERY_INVALID;
   }
 }
 
-QueryType StatementTypeToQueryType(StatementType stmt_type, const parser::SQLStatement* sql_stmt) {
+QueryType StatementTypeToQueryType(StatementType stmt_type,
+                                   const parser::SQLStatement *sql_stmt) {
   LOG_TRACE("%s", StatementTypeToString(stmt_type).c_str());
-  static std::unordered_map<StatementType, QueryType, EnumHash<StatementType>> type_map {
-      {StatementType::EXECUTE, QueryType::QUERY_EXECUTE},
-      {StatementType::PREPARE, QueryType::QUERY_PREPARE},
-      {StatementType::INSERT, QueryType::QUERY_INSERT},
-      {StatementType::UPDATE, QueryType::QUERY_UPDATE},
-      {StatementType::DELETE, QueryType::QUERY_DELETE},
-      {StatementType::COPY, QueryType::QUERY_COPY},
-      {StatementType::ANALYZE, QueryType::QUERY_ANALYZE},
-      {StatementType::ALTER, QueryType::QUERY_ALTER},
-      {StatementType::DROP, QueryType::QUERY_DROP},
-      {StatementType::SELECT, QueryType::QUERY_SELECT},
-      {StatementType::VARIABLE_SET, QueryType::QUERY_SET},
-  };
+  static std::unordered_map<StatementType, QueryType, EnumHash<StatementType>>
+      type_map{
+          {StatementType::EXECUTE, QueryType::QUERY_EXECUTE},
+          {StatementType::PREPARE, QueryType::QUERY_PREPARE},
+          {StatementType::INSERT, QueryType::QUERY_INSERT},
+          {StatementType::UPDATE, QueryType::QUERY_UPDATE},
+          {StatementType::DELETE, QueryType::QUERY_DELETE},
+          {StatementType::COPY, QueryType::QUERY_COPY},
+          {StatementType::ANALYZE, QueryType::QUERY_ANALYZE},
+          {StatementType::ALTER, QueryType::QUERY_ALTER},
+          {StatementType::DROP, QueryType::QUERY_DROP},
+          {StatementType::SELECT, QueryType::QUERY_SELECT},
+          {StatementType::VARIABLE_SET, QueryType::QUERY_SET},
+      };
   QueryType query_type = QueryType::QUERY_OTHER;
-  std::unordered_map<StatementType, QueryType, EnumHash<StatementType>>::iterator it  = type_map.find(stmt_type);
+  std::unordered_map<StatementType, QueryType,
+                     EnumHash<StatementType>>::iterator it =
+      type_map.find(stmt_type);
   if (it != type_map.end()) {
-    query_type = it -> second;
+    query_type = it->second;
   } else {
-    switch(stmt_type) {
+    switch (stmt_type) {
       case StatementType::TRANSACTION: {
-        switch (static_cast<const parser::TransactionStatement*>(sql_stmt) ->type) {
-          case parser::TransactionStatement::CommandType::kBegin:query_type = QueryType::QUERY_BEGIN;
+        switch (
+            static_cast<const parser::TransactionStatement *>(sql_stmt)->type) {
+          case parser::TransactionStatement::CommandType::kBegin:
+            query_type = QueryType::QUERY_BEGIN;
             break;
-          case parser::TransactionStatement::CommandType::kCommit:query_type = QueryType::QUERY_COMMIT;
+          case parser::TransactionStatement::CommandType::kCommit:
+            query_type = QueryType::QUERY_COMMIT;
             break;
-          case parser::TransactionStatement::CommandType::kRollback:query_type = QueryType::QUERY_ROLLBACK;
+          case parser::TransactionStatement::CommandType::kRollback:
+            query_type = QueryType::QUERY_ROLLBACK;
             break;
         }
         break;
       }
       case StatementType::CREATE: {
-        switch (static_cast<const parser::CreateStatement*>(sql_stmt) ->type) {
-          case parser::CreateStatement::CreateType::kDatabase:query_type = QueryType::QUERY_CREATE_DB;
+        switch (static_cast<const parser::CreateStatement *>(sql_stmt)->type) {
+          case parser::CreateStatement::CreateType::kDatabase:
+            query_type = QueryType::QUERY_CREATE_DB;
             break;
-          case parser::CreateStatement::CreateType::kIndex:query_type = QueryType::QUERY_CREATE_INDEX;
+          case parser::CreateStatement::CreateType::kIndex:
+            query_type = QueryType::QUERY_CREATE_INDEX;
             break;
-          case parser::CreateStatement::CreateType::kTable:query_type = QueryType::QUERY_CREATE_TABLE;
+          case parser::CreateStatement::CreateType::kTable:
+            query_type = QueryType::QUERY_CREATE_TABLE;
             break;
-          case parser::CreateStatement::CreateType::kTrigger:query_type = QueryType::QUERY_CREATE_TRIGGER;
+          case parser::CreateStatement::CreateType::kTrigger:
+            query_type = QueryType::QUERY_CREATE_TRIGGER;
             break;
-          case parser::CreateStatement::CreateType::kSchema:query_type = QueryType::QUERY_CREATE_SCHEMA;
+          case parser::CreateStatement::CreateType::kSchema:
+            query_type = QueryType::QUERY_CREATE_SCHEMA;
             break;
-          case parser::CreateStatement::CreateType::kView:query_type = QueryType::QUERY_CREATE_VIEW;
+          case parser::CreateStatement::CreateType::kView:
+            query_type = QueryType::QUERY_CREATE_VIEW;
             break;
         }
         break;
@@ -633,6 +682,147 @@ QueryType StatementTypeToQueryType(StatementType stmt_type, const parser::SQLSta
     }
   }
   return query_type;
+}
+
+//===--------------------------------------------------------------------===//
+// PostgresValueType - String Utilities
+//===--------------------------------------------------------------------===//
+
+std::string PostgresValueTypeToString(PostgresValueType type) {
+  switch (type) {
+    case PostgresValueType::INVALID: {
+      return "INVALID";
+    }
+    case PostgresValueType::TINYINT: {
+      return "TINYINT";
+    }
+    case PostgresValueType::SMALLINT: {
+      return "SMALLINT";
+    }
+    case PostgresValueType::INTEGER: {
+      return "INTEGER";
+    }
+    case PostgresValueType::VARBINARY: {
+      return "VARBINARY";
+    }
+    case PostgresValueType::BIGINT: {
+      return "BIGINT";
+    }
+    case PostgresValueType::REAL: {
+      return "REAL";
+    }
+    case PostgresValueType::DOUBLE: {
+      return "DOUBLE";
+    }
+    case PostgresValueType::TEXT: {
+      return "TEXT";
+    }
+    case PostgresValueType::BPCHAR: {
+      return "BPCHAR";
+    }
+    case PostgresValueType::BPCHAR2: {
+      return "BPCHAR2";
+    }
+    case PostgresValueType::VARCHAR: {
+      return "VARCHAR";
+    }
+    case PostgresValueType::VARCHAR2: {
+      return "VARCHAR2";
+    }
+    case PostgresValueType::DATE: {
+      return "DATE";
+    }
+    case PostgresValueType::TIMESTAMPS: {
+      return "TIMESTAMPS";
+    }
+    case PostgresValueType::TIMESTAMPS2: {
+      return "TIMESTAMPS2";
+    }
+    case PostgresValueType::TEXT_ARRAY: {
+      return "TEXT_ARRAY";
+    }
+    case PostgresValueType::INT2_ARRAY: {
+      return "INT2_ARRAY";
+    }
+    case PostgresValueType::INT4_ARRAY: {
+      return "INT4_ARRAY";
+    }
+    case PostgresValueType::OID_ARRAY: {
+      return "OID_ARRAY";
+    }
+    case PostgresValueType::FLOADT4_ARRAY: {
+      return "FLOADT4_ARRAY";
+    }
+    case PostgresValueType::DECIMAL: {
+      return "DECIMAL";
+    }
+    default: {
+      throw ConversionException(StringUtil::Format(
+          "No string conversion for PostgresValueType value '%d'",
+          static_cast<int>(type)));
+    }
+  }
+  return "INVALID";
+}
+
+PostgresValueType StringToPostgresValueType(const std::string &str) {
+  std::string upper_str = StringUtil::Upper(str);
+  if (upper_str == "INVALID") {
+    return PostgresValueType::INVALID;
+  } else if (upper_str == "BOOLEAN") {
+    return PostgresValueType::BOOLEAN;
+  } else if (upper_str == "TINYINT") {
+    return PostgresValueType::TINYINT;
+  } else if (upper_str == "SMALLINT") {
+    return PostgresValueType::SMALLINT;
+  } else if (upper_str == "INTEGER") {
+    return PostgresValueType::INTEGER;
+  } else if (upper_str == "VARBINARY") {
+    return PostgresValueType::VARBINARY;
+  } else if (upper_str == "BIGINT") {
+    return PostgresValueType::BIGINT;
+  } else if (upper_str == "REAL") {
+    return PostgresValueType::REAL;
+  } else if (upper_str == "DOUBLE") {
+    return PostgresValueType::DOUBLE;
+  } else if (upper_str == "TEXT") {
+    return PostgresValueType::TEXT;
+  } else if (upper_str == "BPCHAR") {
+    return PostgresValueType::BPCHAR;
+  } else if (upper_str == "BPCHAR2") {
+    return PostgresValueType::BPCHAR2;
+  } else if (upper_str == "VARCHAR") {
+    return PostgresValueType::VARCHAR;
+  } else if (upper_str == "VARCHAR2") {
+    return PostgresValueType::VARCHAR2;
+  } else if (upper_str == "DATE") {
+    return PostgresValueType::DATE;
+  } else if (upper_str == "TIMESTAMPS") {
+    return PostgresValueType::TIMESTAMPS;
+  } else if (upper_str == "TIMESTAMPS2") {
+    return PostgresValueType::TIMESTAMPS2;
+  } else if (upper_str == "TEXT_ARRAY") {
+    return PostgresValueType::TEXT_ARRAY;
+  } else if (upper_str == "INT2_ARRAY") {
+    return PostgresValueType::INT2_ARRAY;
+  } else if (upper_str == "INT4_ARRAY") {
+    return PostgresValueType::INT4_ARRAY;
+  } else if (upper_str == "OID_ARRAY") {
+    return PostgresValueType::OID_ARRAY;
+  } else if (upper_str == "FLOADT4_ARRAY") {
+    return PostgresValueType::FLOADT4_ARRAY;
+  } else if (upper_str == "DECIMAL") {
+    return PostgresValueType::DECIMAL;
+  } else {
+    throw ConversionException(StringUtil::Format(
+        "No PostgresValueType conversion from string '%s'", upper_str.c_str()));
+  }
+  return PostgresValueType::INVALID;
+}
+
+std::ostream &operator<<(std::ostream &os, const PostgresValueType &type) {
+  os << PostgresValueTypeToString(type);
+  return os;
 }
 
 //===--------------------------------------------------------------------===//
@@ -787,6 +977,9 @@ std::string ExpressionTypeToString(ExpressionType type, bool short_str) {
     }
     case ExpressionType::CAST: {
       return ("CAST");
+    }
+    case ExpressionType::OPERATOR_IS_NOT_NULL: {
+      return ("IS_NOT_NULL");
     }
     default: {
       throw ConversionException(StringUtil::Format(
@@ -946,13 +1139,15 @@ std::string IndexTypeToString(IndexType type) {
     case IndexType::SKIPLIST: {
       return "SKIPLIST";
     }
+    case IndexType::ART: {
+      return "ART";
+    }
     default: {
       throw ConversionException(
           StringUtil::Format("No string conversion for IndexType value '%d'",
                              static_cast<int>(type)));
     }
   }
-  return "INVALID";
 }
 
 IndexType StringToIndexType(const std::string &str) {
@@ -967,6 +1162,8 @@ IndexType StringToIndexType(const std::string &str) {
     return IndexType::HASH;
   } else if (upper_str == "SKIPLIST") {
     return IndexType::SKIPLIST;
+  } else if (upper_str == "ART") {
+    return IndexType::ART;
   } else {
     throw ConversionException(StringUtil::Format(
         "No IndexType conversion from string '%s'", upper_str.c_str()));
@@ -2887,8 +3084,8 @@ std::string OperatorIdToString(OperatorId op_id) {
       return "BTrim";
     case OperatorId::Sqrt:
       return "Sqrt";
-    case OperatorId::Extract:
-      return "Extract";
+    case OperatorId::DatePart:
+      return "DatePart";
     case OperatorId::Floor:
       return "Floor";
     case OperatorId::Like:

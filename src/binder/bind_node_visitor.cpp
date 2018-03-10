@@ -4,9 +4,9 @@
 //
 // bind_node_visitor.cpp
 //
-// Identification: src/binder/binder_node_visitor.cpp
+// Identification: src/binder/bind_node_visitor.cpp
 //
-// Copyright (c) 2015-16, Carnegie Mellon University Database Group
+// Copyright (c) 2015-2018, Carnegie Mellon University Database Group
 //
 //===----------------------------------------------------------------------===//
 
@@ -75,10 +75,8 @@ void BindNodeVisitor::Visit(parser::SelectStatement *node) {
     }
     select_element->DeriveSubqueryFlag();
 
-    // Recursively deduce expression value type
-    expression::ExpressionUtil::EvaluateExpression({ExprMap()},
-                                                   select_element.get());
-    // Recursively deduce expression name
+    // Traverse the expression to deduce expression value type and name
+    select_element->DeduceExpressionType();
     select_element->DeduceExpressionName();
     new_select_list.push_back(std::move(select_element));
   }
@@ -175,6 +173,9 @@ void BindNodeVisitor::Visit(parser::CreateStatement *node) {
 }
 void BindNodeVisitor::Visit(parser::InsertStatement *node) {
   node->TryBindDatabaseName(default_database_name_);
+  context_ = std::make_shared<BinderContext>(nullptr);
+  context_->AddRegularTable(node->GetDatabaseName(), node->GetTableName(),
+                            node->GetTableName(), txn_);
   if (node->select != nullptr) {
     node->select->Accept(this);
   }
@@ -286,13 +287,14 @@ void BindNodeVisitor::Visit(expression::FunctionExpression *expr) {
   if (!func_data.is_udf_) {
     expr->SetBuiltinFunctionExpressionParameters(
         func_data.func_, func_data.return_type_, func_data.argument_types_);
+
     // Look into the OperatorId for built-in functions to check the first
     // argument for timestamp functions.
     // TODO(LM): The OperatorId might need to be changed to global ID after we
     // rewrite the function identification logic.
     auto func_operator_id = func_data.func_.op_id;
     if (func_operator_id == OperatorId::DateTrunc ||
-        func_operator_id == OperatorId::Extract) {
+        func_operator_id == OperatorId::DatePart) {
       auto date_part = expr->GetChild(0);
 
       // Test whether the first argument is a correct DatePartType

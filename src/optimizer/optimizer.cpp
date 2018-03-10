@@ -19,7 +19,6 @@
 #include "catalog/table_catalog.h"
 
 #include "optimizer/binding.h"
-#include "optimizer/cost_and_stats_calculator.h"
 #include "optimizer/operator_visitor.h"
 #include "optimizer/properties.h"
 #include "optimizer/property_enforcer.h"
@@ -69,15 +68,24 @@ void Optimizer::OptimizeLoop(int root_group_id,
       std::unique_ptr<OptimizerTaskStack>(new OptimizerTaskStack());
   metadata_.SetTaskPool(task_stack.get());
 
-  // Perform optimization after the rewrite
-  task_stack->Push(new OptimizeGroup(metadata_.memo.GetGroupByID(root_group_id),
-                                     root_context));
   // Perform rewrite first
   task_stack->Push(new TopDownRewrite(root_group_id, root_context,
                                       RewriteRuleSetName::PREDICATE_PUSH_DOWN));
 
-  task_stack->Push(new BottomUpRewrite(root_group_id, root_context,
-                                      RewriteRuleSetName::UNNEST_SUBQUERY, false));
+  task_stack->Push(new BottomUpRewrite(
+      root_group_id, root_context, RewriteRuleSetName::UNNEST_SUBQUERY, false));
+  while (!task_stack->Empty()) {
+    auto task = task_stack->Pop();
+    task->execute();
+  }
+
+  // Perform optimization after the rewrite
+  task_stack->Push(new OptimizeGroup(metadata_.memo.GetGroupByID(root_group_id),
+                                     root_context));
+  // Derive stats for the only one logical expression before optimizing
+  task_stack->Push(new DeriveStats(
+      metadata_.memo.GetGroupByID(root_group_id)->GetLogicalExpression(),
+      ExprSet{}, root_context));
 
   // TODO: Add timer for early stop
   while (!task_stack->Empty()) {
@@ -286,7 +294,7 @@ unique_ptr<planner::AbstractPlan> Optimizer::ChooseBestPlan(
   auto gexpr = group->GetBestExpression(required_props);
 
   LOG_TRACE("Choosing best plan for group %d with op %s", gexpr->GetGroupID(),
-            gexpr->Op().name().c_str());
+            gexpr->Op().GetName().c_str());
 
   vector<GroupID> child_groups = gexpr->GetChildGroupIDs();
   auto required_input_props = gexpr->GetInputProperties(required_props);

@@ -141,7 +141,7 @@ struct CompareDecimal : public TypeSystem::SimpleComparisonHandleNull {
                            const Value &right) const override {
     // For integer comparisons, just subtract left from right and cast the
     // result to a 32-bit value
-    llvm::Value *diff = codegen->CreateSub(left.GetValue(), right.GetValue());
+    llvm::Value *diff = codegen->CreateFSub(left.GetValue(), right.GetValue());
     return Value{Integer::Instance(),
                  codegen->CreateFPToSI(diff, codegen.Int32Type()), nullptr,
                  nullptr};
@@ -177,6 +177,25 @@ struct Negate : public TypeSystem::UnaryOperatorHandleNull {
 
     // Return result
     return Value{Decimal::Instance(), result, nullptr, nullptr};
+  }
+};
+
+// Abs
+struct Abs : public TypeSystem::UnaryOperatorHandleNull {
+  bool SupportsType(const Type &type) const override {
+    return type.GetSqlType() == Decimal::Instance();
+  }
+
+  Type ResultType(UNUSED_ATTRIBUTE const Type &val_type) const override {
+    return Type{Decimal::Instance()};
+  }
+
+  Value Impl(CodeGen &codegen, const Value &val,
+             UNUSED_ATTRIBUTE const TypeSystem::InvocationContext &ctx)
+    const override {
+    llvm::Value *raw_ret =
+      codegen.Call(DecimalFunctionsProxy::Abs, {val.GetValue()});
+    return Value{Decimal::Instance(), raw_ret};
   }
 };
 
@@ -476,12 +495,14 @@ std::vector<TypeSystem::ComparisonInfo> kComparisonTable = {{kCompareDecimal}};
 
 // Unary operators
 Negate kNegOp;
+Abs kAbsOp;
 Floor kFloorOp;
 Round kRound;
 Ceil kCeilOp;
 Sqrt kSqrt;
 std::vector<TypeSystem::UnaryOpInfo> kUnaryOperatorTable = {
     {OperatorId::Negation, kNegOp},
+    {OperatorId::Abs, kAbsOp},
     {OperatorId::Floor, kFloorOp},
     {OperatorId::Round, kRound},
     {OperatorId::Ceil, kCeilOp},
